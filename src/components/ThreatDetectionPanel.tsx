@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Brain, Target, AlertTriangle, TrendingUp } from 'lucide-react';
 import { ThreatDetection, AnomalyDetection } from '../types/incident';
+import { useIncidentData } from '../hooks/useIncidentData';
 
 interface ThreatDetectionPanelProps {
   threatDetections: ThreatDetection[];
@@ -8,6 +9,7 @@ interface ThreatDetectionPanelProps {
 }
 
 export function ThreatDetectionPanel({ threatDetections, anomalies }: ThreatDetectionPanelProps) {
+  const { backendStats, backendConnected, blockIP } = useIncidentData();
   const highConfidenceThreats = threatDetections.filter(t => t.confidence > 80);
   const criticalAnomalies = anomalies.filter(a => a.severity === 'critical' || a.deviation > 300);
 
@@ -60,31 +62,66 @@ export function ThreatDetectionPanel({ threatDetections, anomalies }: ThreatDete
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
             <span className="text-red-400 text-sm">Active Scanning</span>
+            {backendConnected && (
+              <>
+                <div className="w-2 h-2 bg-blue-400 rounded-full ml-2"></div>
+                <span className="text-blue-400 text-sm">Backend Connected</span>
+              </>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900 rounded-lg p-4">
-            <div className="text-red-400 text-2xl font-bold">{highConfidenceThreats.length}</div>
+            <div className="text-red-400 text-2xl font-bold">
+              {backendStats?.active_threats || highConfidenceThreats.length}
+            </div>
             <div className="text-gray-400 text-sm">High Confidence</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
             <div className="text-orange-400 text-2xl font-bold">
-              {threatDetections.filter(t => t.threatType === 'ml_detection').length}
+              {backendStats?.total_threats || threatDetections.filter(t => t.threatType === 'ml_detection').length}
             </div>
-            <div className="text-gray-400 text-sm">ML Detections</div>
+            <div className="text-gray-400 text-sm">Total Threats</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
             <div className="text-purple-400 text-2xl font-bold">
-              {threatDetections.filter(t => t.threatType === 'behavioral_anomaly').length}
+              {backendStats?.blocked_ips || threatDetections.filter(t => t.threatType === 'behavioral_anomaly').length}
             </div>
-            <div className="text-gray-400 text-sm">Behavioral</div>
+            <div className="text-gray-400 text-sm">Blocked IPs</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
-            <div className="text-blue-400 text-2xl font-bold">{criticalAnomalies.length}</div>
-            <div className="text-gray-400 text-sm">Critical Anomalies</div>
+            <div className="text-blue-400 text-2xl font-bold">
+              {backendStats?.threats_last_hour || criticalAnomalies.length}
+            </div>
+            <div className="text-gray-400 text-sm">Last Hour</div>
           </div>
         </div>
+
+        {/* Backend Statistics */}
+        {backendConnected && backendStats && (
+          <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+            <h4 className="text-sm font-medium text-blue-300 mb-2">Live Backend Statistics</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="text-gray-400">24h Threats:</span>
+                <span className="text-white ml-1">{backendStats.threats_last_24h}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Correlations:</span>
+                <span className="text-white ml-1">{backendStats.correlations?.length || 0}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Top Threat IPs:</span>
+                <span className="text-white ml-1">{backendStats.top_threat_ips?.length || 0}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Threat Types:</span>
+                <span className="text-white ml-1">{Object.keys(backendStats.threat_types || {}).length}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recent Threat Detections */}
         <div className="space-y-3">
@@ -134,6 +171,18 @@ export function ThreatDetectionPanel({ threatDetections, anomalies }: ThreatDete
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Action buttons for backend threats */}
+                {backendConnected && (
+                  <div className="mt-2 pt-2 border-t border-gray-700">
+                    <button
+                      onClick={() => blockIP(threat.affectedAssets[0] || 'unknown')}
+                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded mr-2"
+                    >
+                      Block IP
+                    </button>
                   </div>
                 )}
               </div>

@@ -26,7 +26,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     threatDetections, 
     anomalies, 
     isMonitoring, 
-    toggleMonitoring 
+    toggleMonitoring,
+    backendConnected,
+    backendStats
   } = useIncidentData();
   
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
@@ -388,6 +390,10 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className={`w-3 h-3 rounded-full ${isMonitoring ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
                 <span className="text-sm text-gray-300">
                   {isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}
+                </span>
+                <div className={`w-2 h-2 rounded-full ml-2 ${backendConnected ? 'bg-blue-400' : 'bg-gray-400'}`} />
+                <span className="text-xs text-gray-400">
+                  Backend {backendConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
               <button
