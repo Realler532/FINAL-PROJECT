@@ -1,0 +1,6 @@
+psutil==5.9.0
+supabase>=1.0.0
+python-dotenv
+
+fastapi
+uvicorn[standard]
